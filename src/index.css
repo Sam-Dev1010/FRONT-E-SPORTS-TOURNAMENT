@@ -1,0 +1,87 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+a { color: #60a5fa; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.layout { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #1e293b; }
+.header h1 { font-size: 1.5rem; color: #f8fafc; }
+.header h1 span { color: #6366f1; }
+.nav { display: flex; gap: 1rem; }
+.nav a { padding: 0.5rem 1rem; border-radius: 0.5rem; background: #1e293b; font-size: 0.875rem; }
+.nav a:hover { background: #334155; text-decoration: none; }
+
+.card { background: #1e293b; border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid #334155; }
+.card h2 { font-size: 1.25rem; margin-bottom: 1rem; color: #f1f5f9; }
+.card h3 { font-size: 1rem; margin-bottom: 0.5rem; color: #94a3b8; }
+
+.btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; }
+.btn-primary { background: #6366f1; color: #fff; }
+.btn-primary:hover { background: #4f46e5; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-success { background: #22c55e; color: #fff; }
+.btn-success:hover { background: #16a34a; }
+.btn-danger { background: #ef4444; color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.btn-outline { background: transparent; color: #94a3b8; border: 1px solid #334155; }
+.btn-outline:hover { background: #1e293b; }
+.btn-sm { padding: 0.25rem 0.75rem; font-size: 0.75rem; }
+.btn-lg { padding: 0.75rem 1.5rem; font-size: 1rem; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.25rem; }
+.form-group input, .form-group select { width: 100%; padding: 0.5rem 0.75rem; border-radius: 0.5rem; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 0.875rem; }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: #6366f1; }
+
+.badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+.badge-draft { background: #1e293b; color: #64748b; }
+.badge-registration { background: #f59e0b20; color: #f59e0b; border: 1px solid #f59e0b40; }
+.badge-in_progress { background: #3b82f620; color: #60a5fa; border: 1px solid #3b82f640; }
+.badge-completed { background: #22c55e20; color: #22c55e; border: 1px solid #22c55e40; }
+.badge-cancelled { background: #ef444420; color: #ef4444; border: 1px solid #ef444440; }
+
+.bracket { display: flex; gap: 2rem; overflow-x: auto; padding: 1rem 0; }
+.bracket-round { display: flex; flex-direction: column; gap: 1rem; min-width: 200px; }
+.bracket-round h3 { text-align: center; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+.match-card { background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem; min-width: 200px; cursor: pointer; transition: border-color 0.2s; }
+.match-card:hover { border-color: #6366f1; }
+.match-card .teams { display: flex; flex-direction: column; gap: 0.25rem; }
+.match-card .team-row { display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; }
+.match-card .team-row.winner { color: #22c55e; font-weight: 600; }
+.match-card .score { font-family: monospace; font-size: 1rem; font-weight: 700; }
+.match-card .status { text-align: center; font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; }
+
+.standing-table { width: 100%; border-collapse: collapse; }
+.standing-table th { text-align: left; padding: 0.5rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #334155; }
+.standing-table td { padding: 0.5rem; border-bottom: 1px solid #1e293b; font-size: 0.875rem; }
+.standing-table tr:hover td { background: #0f172a; }
+.standing-table .pos { color: #64748b; width: 2rem; text-align: center; }
+.standing-table .team-name { font-weight: 500; }
+.standing-table .highlight { color: #22c55e; font-weight: 700; }
+
+.team-card { display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: #0f172a; border-radius: 0.5rem; border: 1px solid #1e293b; }
+.team-card .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; color: #fff; }
+.team-card .info { flex: 1; }
+.team-card .info .name { font-weight: 600; }
+.team-card .info .tag { font-size: 0.75rem; color: #64748b; }
+
+.inline-form { display: flex; gap: 0.5rem; align-items: flex-end; }
+.inline-form .form-group { flex: 1; margin-bottom: 0; }
+
+.empty-state { text-align: center; padding: 3rem; color: #64748b; }
+.empty-state h3 { font-size: 1.25rem; margin-bottom: 0.5rem; color: #94a3b8; }
+
+.score-edit { display: flex; align-items: center; gap: 0.5rem; }
+.score-edit input { width: 3rem; text-align: center; padding: 0.25rem; border-radius: 0.25rem; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 1rem; }
+
+.tabs { display: flex; gap: 0; margin-bottom: 1.5rem; background: #0f172a; border-radius: 0.5rem; overflow: hidden; border: 1px solid #334155; }
+.tabs button { flex: 1; padding: 0.75rem 1rem; border: none; background: transparent; color: #94a3b8; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; }
+.tabs button.active { background: #6366f1; color: #fff; }
+.tabs button:hover:not(.active) { color: #e2e8f0; }
+
+.loading { text-align: center; padding: 3rem; color: #64748b; }
+.error { text-align: center; padding: 2rem; color: #ef4444; background: #ef444410; border-radius: 0.5rem; }
+
+.notification { position: fixed; bottom: 1rem; right: 1rem; background: #22c55e; color: #fff; padding: 0.75rem 1.5rem; border-radius: 0.5rem; animation: slideIn 0.3s ease; z-index: 100; }
+@keyframes slideIn { from { transform: translateY(1rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
