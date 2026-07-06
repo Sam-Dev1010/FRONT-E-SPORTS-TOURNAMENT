@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { api } from '../api/tournamentApi'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { api, getVisitorId } from '../api/tournamentApi'
 import type { Tournament, Team, Match, Standing } from '../api/tournamentApi'
 import { useWebSocket } from '../hooks/useWebSocket'
 
@@ -12,6 +12,7 @@ const statusLabel: Record<string, string> = {
 export default function TournamentDetail() {
   const { id } = useParams<{ id: string }>()
   const tId = parseInt(id || '0')
+  const navigate = useNavigate()
   const [tournament, setTournament] = useState<Tournament | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
   const [standings, setStandings] = useState<Standing[]>([])
@@ -93,6 +94,21 @@ export default function TournamentDetail() {
     } catch (e: any) { alert(e.message) }
   }
 
+  const deleteTournament = async () => {
+    if (!confirm(`¿Eliminar "${tournament?.name}"? Esta acción no se puede deshacer.`)) return
+    try {
+      await api.deleteTournament(tId)
+      navigate('/')
+    } catch (e: any) { alert(e.message) }
+  }
+
+  const shareLink = () => {
+    navigator.clipboard.writeText(window.location.href)
+    showNotification('🔗 Link copiado al portapapeles')
+  }
+
+  const isCreator = tournament?.creatorVisitorId === getVisitorId()
+
   if (loading) return <div className="loading">Cargando torneo...</div>
   if (error) return <div className="error">Error: {error}</div>
   if (!tournament) return <div className="error">Torneo no encontrado</div>
@@ -104,6 +120,12 @@ export default function TournamentDetail() {
     <div>
       {notification && <div className="notification">{notification}</div>}
 
+      {!isCreator && (
+        <div style={{ background: '#1e293b', border: '1px solid #f59e0b40', borderRadius: '0.5rem', padding: '0.5rem 1rem', marginBottom: '1rem', textAlign: 'center', color: '#f59e0b', fontSize: '0.875rem' }}>
+          👁 Modo solo lectura — No puedes modificar este torneo
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1.5rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
@@ -114,6 +136,8 @@ export default function TournamentDetail() {
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <Link to="/" className="btn btn-outline btn-sm">← Volver</Link>
+          <button className="btn btn-outline btn-sm" onClick={shareLink}>🔗 Compartir</button>
+          {isCreator && <button className="btn btn-danger btn-sm" onClick={deleteTournament}>🗑 Eliminar</button>}
         </div>
       </div>
 
@@ -146,7 +170,7 @@ export default function TournamentDetail() {
               </div>
             )}
 
-            {tournament.status === 'REGISTRATION' && (
+            {isCreator && tournament.status === 'REGISTRATION' && (
               <form onSubmit={e => { e.preventDefault(); addTeam() }} className="inline-form" style={{ marginTop: '1rem' }}>
                 <div className="form-group">
                   <label>Nombre del equipo</label>
@@ -161,7 +185,7 @@ export default function TournamentDetail() {
             )}
           </div>
 
-          {canGenerateFixtures && (
+          {isCreator && canGenerateFixtures && (
             <div className="card" style={{ textAlign: 'center' }}>
               <p style={{ marginBottom: '1rem', color: '#94a3b8' }}>{tournament.teams.length} equipos registrados</p>
               <button className="btn btn-success btn-lg" onClick={generateFixtures}>
@@ -190,7 +214,7 @@ export default function TournamentDetail() {
                       <MatchCard
                         key={m.id}
                         match={m}
-                        editable={m.status === 'SCHEDULED' || m.status === 'IN_PROGRESS'}
+                        editable={isCreator && (m.status === 'SCHEDULED' || m.status === 'IN_PROGRESS')}
                         onEdit={() => startEditScore(m)}
                         editing={editingScore === m.id}
                         score1={score1}
@@ -209,7 +233,7 @@ export default function TournamentDetail() {
                 <MatchCard
                   key={m.id}
                   match={m}
-                  editable={m.status === 'SCHEDULED' || m.status === 'IN_PROGRESS'}
+                  editable={isCreator && (m.status === 'SCHEDULED' || m.status === 'IN_PROGRESS')}
                   onEdit={() => startEditScore(m)}
                   editing={editingScore === m.id}
                   score1={score1}
