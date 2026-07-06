@@ -158,6 +158,12 @@ export const api = {
           advanceWinner(t, m)
         }
         updateStandings(t)
+
+        const allCompleted = t.matches.every(x => x.status === 'COMPLETED' || x.status === 'BYE')
+        if (allCompleted) {
+          t.status = 'COMPLETED'
+        }
+
         found = m
         break
       }
@@ -165,6 +171,15 @@ export const api = {
     save(all)
     if (!found) throw new Error('Partido no encontrado')
     return delay(found)
+  },
+
+  async finishTournament(id: number): Promise<Tournament> {
+    const all = load()
+    const t = all.find(x => x.id === id)
+    if (!t) throw new Error('Torneo no encontrado')
+    t.status = 'COMPLETED'
+    save(all)
+    return delay(t)
   },
 
   async deleteTournament(id: number): Promise<void> {
@@ -183,14 +198,18 @@ export const api = {
 }
 
 export function encodeShareUrl(t: Tournament): string {
+  return `${window.location.origin}/tournament/${t.id}`
+}
+
+export function encodeShareData(t: Tournament): string {
   const json = JSON.stringify(t)
   const encoded = btoa(encodeURIComponent(json))
-  return `${window.location.origin}${window.location.pathname}#share=${encoded}`
+  return `${window.location.origin}${window.location.pathname}#import=${encoded}`
 }
 
 export function decodeShareHash(): Tournament | null {
   const hash = window.location.hash
-  const m = hash.match(/^#share=(.+)$/)
+  const m = hash.match(/^#import=(.+)$/)
   if (!m) return null
   try {
     return JSON.parse(decodeURIComponent(atob(m[1])))
@@ -199,8 +218,11 @@ export function decodeShareHash(): Tournament | null {
 
 export function importSharedTournament(t: Tournament): number {
   const all = load()
-  if (all.some(x => x.id === t.id)) {
-    t.id = genId()
+  const existing = all.find(x => x.id === t.id)
+  if (existing) {
+    Object.assign(existing, t)
+    save(all)
+    return t.id
   }
   all.push(t)
   save(all)
@@ -247,6 +269,17 @@ function generateSingleElimination(t: Tournament): Match[] {
     }
   }
 
+  for (const m of matches) {
+    const nextRound = m.roundNumber + 1
+    if (nextRound <= totalRounds) {
+      const nextIndex = Math.floor(m.matchPosition / 2)
+      const nextMatch = matches.find(x => x.roundNumber === nextRound && x.matchPosition === nextIndex)
+      if (nextMatch) {
+        m.nextMatch = { id: nextMatch.id }
+      }
+    }
+  }
+
   return matches
 }
 
@@ -254,19 +287,33 @@ function generateRoundRobin(t: Tournament): Match[] {
   const teams = [...t.teams]
   const matches: Match[] = []
   let matchId = genId()
+  const n = teams.length
+  if (n < 2) return matches
 
-  for (let i = 0; i < teams.length; i++) {
-    for (let j = i + 1; j < teams.length; j++) {
-      matches.push({
-        id: matchId++,
-        roundNumber: 1,
-        matchPosition: matches.length,
-        team1: teams[i],
-        team2: teams[j],
-        score1: 0, score2: 0,
-        status: 'SCHEDULED',
-      })
+  const isOdd = n % 2 !== 0
+  let roundTeams: (Team | null)[] = isOdd ? [...teams, null] : [...teams]
+  const numRounds = roundTeams.length - 1
+  const half = roundTeams.length / 2
+
+  for (let round = 1; round <= numRounds; round++) {
+    for (let i = 0; i < half; i++) {
+      const home = roundTeams[i]
+      const away = roundTeams[roundTeams.length - 1 - i]
+      if (home && away) {
+        matches.push({
+          id: matchId++,
+          roundNumber: round,
+          matchPosition: i,
+          team1: home,
+          team2: away,
+          score1: 0, score2: 0,
+          status: 'SCHEDULED',
+        })
+      }
     }
+
+    const last = roundTeams.pop()!
+    roundTeams.splice(1, 0, last)
   }
 
   return matches
@@ -275,8 +322,7 @@ function generateRoundRobin(t: Tournament): Match[] {
 function advanceWinner(t: Tournament, m: Match) {
   const next = t.matches.find(x => x.id === m.nextMatch?.id)
   if (!next) return
-  const slotIndex = t.matches.filter(x => x.roundNumber === m.roundNumber && x.matchPosition < m.matchPosition).length % 2
-  if (slotIndex === 0) next.team1 = m.winner
+  if (!next.team1) next.team1 = m.winner
   else next.team2 = m.winner
 }
 

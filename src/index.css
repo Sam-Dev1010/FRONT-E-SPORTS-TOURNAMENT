@@ -84,4 +84,25 @@ a:hover { text-decoration: underline; }
 .error { text-align: center; padding: 2rem; color: #ef4444; background: #ef444410; border-radius: 0.5rem; }
 
 .notification { position: fixed; bottom: 1rem; right: 1rem; background: #22c55e; color: #fff; padding: 0.75rem 1.5rem; border-radius: 0.5rem; animation: slideIn 0.3s ease; z-index: 100; }
+
+.champion-banner { display: flex; align-items: center; gap: 1rem; background: linear-gradient(135deg, #f59e0b20, #f59e0b10); border: 1px solid #f59e0b40; border-radius: 0.75rem; padding: 1rem 1.5rem; margin-bottom: 1rem; }
+.champion-crown { font-size: 2.5rem; line-height: 1; }
+.champion-label { font-size: 0.75rem; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.champion-name { font-size: 1.5rem; font-weight: 700; color: #fbbf24; }
+.champion-match { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; background: #0f172a; border: 1px solid #1e293b; font-size: 0.875rem; }
+.champion-match.won { border-color: #22c55e20; }
+.champion-match.lost { border-color: #ef444420; }
+.champion-match-round { color: #64748b; font-size: 0.75rem; min-width: 4.5rem; }
+.champion-match-vs { flex: 1; }
+.champion-match-result { font-size: 1rem; }
 @keyframes slideIn { from { transform: translateY(1rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.round-selector { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem; }
+.round-pill { display: flex; flex-direction: column; align-items: center; gap: 0.125rem; padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid #334155; background: #0f172a; color: #94a3b8; cursor: pointer; font-size: 0.75rem; font-weight: 600; white-space: nowrap; transition: all 0.2s; min-width: 5rem; }
+.round-pill:hover { border-color: #6366f1; color: #e2e8f0; }
+.round-pill.active { background: #6366f1; border-color: #6366f1; color: #fff; }
+.round-pill.done { border-color: #22c55e40; color: #22c55e; }
+.round-pill.done.active { background: #22c55e; border-color: #22c55e; color: #fff; }
+.round-progress { font-size: 0.625rem; opacity: 0.7; }
+.round-title { font-size: 1rem; color: #f1f5f9; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #1e293b; }
+.round-matches { display: flex; flex-direction: column; gap: 0.75rem; }

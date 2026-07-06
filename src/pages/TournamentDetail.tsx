@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { api, getVisitorId, encodeShareUrl } from '../api/tournamentApi'
+import { api, getVisitorId, encodeShareUrl, encodeShareData } from '../api/tournamentApi'
 import type { Tournament, Team, Match, Standing } from '../api/tournamentApi'
 import { useWebSocket } from '../hooks/useWebSocket'
 
@@ -25,6 +25,7 @@ export default function TournamentDetail() {
   const [editingScore, setEditingScore] = useState<number | null>(null)
   const [score1, setScore1] = useState(0)
   const [score2, setScore2] = useState(0)
+  const [currentRound, setCurrentRound] = useState(1)
 
   const load = useCallback(async () => {
     try {
@@ -94,6 +95,14 @@ export default function TournamentDetail() {
     } catch (e: any) { alert(e.message) }
   }
 
+  const finishTournament = async () => {
+    try {
+      await api.finishTournament(tId)
+      showNotification('🏆 Torneo finalizado!')
+      load()
+    } catch (e: any) { alert(e.message) }
+  }
+
   const deleteTournament = async () => {
     if (!confirm(`¿Eliminar "${tournament?.name}"? Esta acción no se puede deshacer.`)) return
     try {
@@ -111,6 +120,15 @@ export default function TournamentDetail() {
     })
   }
 
+  const copyShareData = () => {
+    const dataUrl = encodeShareData(tournament!)
+    navigator.clipboard.writeText(dataUrl).then(() => {
+      showNotification('📦 Datos del torneo copiados para compartir')
+    }).catch(() => {
+      prompt('Copia este enlace manualmente:', dataUrl)
+    })
+  }
+
   const isCreator = tournament?.creatorVisitorId === getVisitorId()
 
   if (loading) return <div className="loading">Cargando torneo...</div>
@@ -120,9 +138,54 @@ export default function TournamentDetail() {
   const canGenerateFixtures = tournament.status === 'REGISTRATION' && tournament.teams.length >= 2
   const isSingleElim = tournament.type === 'SINGLE_ELIMINATION'
 
+  const champion = (() => {
+    if (tournament.status !== 'COMPLETED') return null
+    if (isSingleElim) {
+      const finalRound = Math.max(...matches.map(m => m.roundNumber))
+      const finalMatch = matches.find(m => m.roundNumber === finalRound && m.winner)
+      return finalMatch?.winner || null
+    }
+    return standings.length > 0 ? standings[0].team : null
+  })()
+
   return (
     <div>
       {notification && <div className="notification">{notification}</div>}
+
+      {champion && (
+        <div>
+          <div className="champion-banner">
+            <div className="champion-crown">🏆</div>
+            <div>
+              <div className="champion-label">Campeón</div>
+              <div className="champion-name">{champion.name}</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Camino al título</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {matches
+                .filter(m => m.status === 'COMPLETED' && (m.team1?.id === champion.id || m.team2?.id === champion.id))
+                .sort((a, b) => a.roundNumber - b.roundNumber)
+                .map(m => {
+                  const isWinner = m.winner?.id === champion.id
+                  const rival = m.team1?.id === champion.id ? m.team2 : m.team1
+                  const champScore = m.team1?.id === champion.id ? m.score1 : m.score2
+                  const rivalScore = m.team1?.id === champion.id ? m.score2 : m.score1
+                  return (
+                    <div key={m.id} className={`champion-match ${isWinner ? 'won' : 'lost'}`}>
+                      <span className="champion-match-round">Ronda {m.roundNumber}</span>
+                      <span className="champion-match-vs">
+                        {champion.name} {champScore} - {rivalScore} {rival?.name}
+                      </span>
+                      <span className="champion-match-result">{isWinner ? '✅' : '❌'}</span>
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {!isCreator && (
         <div style={{ background: '#1e293b', border: '1px solid #f59e0b40', borderRadius: '0.5rem', padding: '0.5rem 1rem', marginBottom: '1rem', textAlign: 'center', color: '#f59e0b', fontSize: '0.875rem' }}>
@@ -138,9 +201,15 @@ export default function TournamentDetail() {
           </div>
           {tournament.game && <p style={{ color: '#94a3b8' }}>🎮 {tournament.game}</p>}
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <Link to="/" className="btn btn-outline btn-sm">← Volver</Link>
-          <button className="btn btn-outline btn-sm" onClick={shareLink}>🔗 Compartir</button>
+          <div style={{ position: 'relative' }}>
+            <button className="btn btn-outline btn-sm" onClick={shareLink}>🔗 Compartir</button>
+            <button className="btn btn-outline btn-sm" onClick={copyShareData} title="Copiar enlace con datos completos" style={{ marginLeft: '0.25rem', fontSize: '0.625rem', padding: '0.25rem 0.4rem' }}>📦</button>
+          </div>
+          {isCreator && tournament.status === 'IN_PROGRESS' && (
+            <button className="btn btn-success btn-sm" onClick={finishTournament}>🏆 Terminar Torneo</button>
+          )}
           {isCreator && <button className="btn btn-danger btn-sm" onClick={deleteTournament}>🗑 Eliminar</button>}
         </div>
       </div>
@@ -207,46 +276,49 @@ export default function TournamentDetail() {
               <h3>No hay partidos</h3>
               <p>Registra equipos y genera los fixtures</p>
             </div>
-          ) : isSingleElim ? (
-            <div className="bracket">
-              {Array.from(new Set(matches.map(m => m.roundNumber)))
-                .sort()
-                .map(round => (
-                  <div key={round} className="bracket-round">
-                    <h3>Ronda {round}</h3>
-                    {matches.filter(m => m.roundNumber === round).map(m => (
-                      <MatchCard
-                        key={m.id}
-                        match={m}
-                        editable={isCreator && (m.status === 'SCHEDULED' || m.status === 'IN_PROGRESS')}
-                        onEdit={() => startEditScore(m)}
-                        editing={editingScore === m.id}
-                        score1={score1}
-                        score2={score2}
-                        setScore1={setScore1}
-                        setScore2={setScore2}
-                        onSave={() => saveScore(m.id)}
-                      />
-                    ))}
-                  </div>
-                ))}
-            </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {matches.map(m => (
-                <MatchCard
-                  key={m.id}
-                  match={m}
-                  editable={isCreator && (m.status === 'SCHEDULED' || m.status === 'IN_PROGRESS')}
-                  onEdit={() => startEditScore(m)}
-                  editing={editingScore === m.id}
-                  score1={score1}
-                  score2={score2}
-                  setScore1={setScore1}
-                  setScore2={setScore2}
-                  onSave={() => saveScore(m.id)}
-                />
-              ))}
+            <div>
+              {(() => {
+                const rounds = Array.from(new Set(matches.map(m => m.roundNumber))).sort()
+                return (
+                  <>
+                    <div className="round-selector">
+                      {rounds.map(round => {
+                        const roundMatches = matches.filter(m => m.roundNumber === round)
+                        const completed = roundMatches.filter(m => m.status === 'COMPLETED' || m.status === 'BYE').length
+                        const total = roundMatches.length
+                        return (
+                          <button
+                            key={round}
+                            className={`round-pill ${currentRound === round ? 'active' : ''} ${completed === total ? 'done' : ''}`}
+                            onClick={() => setCurrentRound(round)}
+                          >
+                            Ronda {round}
+                            <span className="round-progress">{completed}/{total}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <div className="round-matches">
+                      <h3 className="round-title">Ronda {currentRound}</h3>
+                      {matches.filter(m => m.roundNumber === currentRound).map(m => (
+                        <MatchCard
+                          key={m.id}
+                          match={m}
+                          editable={isCreator && (m.status === 'SCHEDULED' || m.status === 'IN_PROGRESS')}
+                          onEdit={() => startEditScore(m)}
+                          editing={editingScore === m.id}
+                          score1={score1}
+                          score2={score2}
+                          setScore1={setScore1}
+                          setScore2={setScore2}
+                          onSave={() => saveScore(m.id)}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )
+              })()}
             </div>
           )}
         </div>

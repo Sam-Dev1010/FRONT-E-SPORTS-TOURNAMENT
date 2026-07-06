@@ -9,11 +9,14 @@ function ShareHandler() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const t = decodeShareHash()
-    if (t) {
-      const id = importSharedTournament(t)
-      window.location.hash = ''
-      navigate(`/tournament/${id}`, { replace: true })
+    const hash = window.location.hash
+    if (hash.startsWith('#import=')) {
+      const t = decodeShareHash()
+      if (t) {
+        const id = importSharedTournament(t)
+        window.location.hash = ''
+        navigate(`/tournament/${id}`, { replace: true })
+      }
     }
   }, [navigate])
 
