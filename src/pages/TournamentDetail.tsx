@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { api, getVisitorId } from '../api/tournamentApi'
+import { api, getVisitorId, encodeShareUrl } from '../api/tournamentApi'
 import type { Tournament, Team, Match, Standing } from '../api/tournamentApi'
 import { useWebSocket } from '../hooks/useWebSocket'
 
@@ -103,8 +103,12 @@ export default function TournamentDetail() {
   }
 
   const shareLink = () => {
-    navigator.clipboard.writeText(window.location.href)
-    showNotification('🔗 Link copiado al portapapeles')
+    const url = encodeShareUrl(tournament!)
+    navigator.clipboard.writeText(url).then(() => {
+      showNotification('🔗 Link copiado al portapapeles')
+    }).catch(() => {
+      prompt('Copia este link manualmente:', url)
+    })
   }
 
   const isCreator = tournament?.creatorVisitorId === getVisitorId()

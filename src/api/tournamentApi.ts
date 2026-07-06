@@ -182,6 +182,31 @@ export const api = {
   },
 }
 
+export function encodeShareUrl(t: Tournament): string {
+  const json = JSON.stringify(t)
+  const encoded = btoa(encodeURIComponent(json))
+  return `${window.location.origin}${window.location.pathname}#share=${encoded}`
+}
+
+export function decodeShareHash(): Tournament | null {
+  const hash = window.location.hash
+  const m = hash.match(/^#share=(.+)$/)
+  if (!m) return null
+  try {
+    return JSON.parse(decodeURIComponent(atob(m[1])))
+  } catch { return null }
+}
+
+export function importSharedTournament(t: Tournament): number {
+  const all = load()
+  if (all.some(x => x.id === t.id)) {
+    t.id = genId()
+  }
+  all.push(t)
+  save(all)
+  return t.id
+}
+
 function generateSingleElimination(t: Tournament): Match[] {
   const teams = [...t.teams]
   const matches: Match[] = []
